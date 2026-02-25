@@ -1,0 +1,25 @@
+imsize 1400 1000
+eye 0 0 0
+viewdir 0 0 1
+vfov 45
+updir 0 1 0
+bkgcolor 0.2 0.2 0.2
+
+light 0.5 1 -0.3 0 0.9
+light 2 6 6 1 0.35
+light -4 8 10 1 0.25
+
+mtlcolor 1 1 0 0.3 0.5 0.7 0.2 0.6 0.2 30
+cylinder 0 -6 14 0 1 0 1.5 4
+
+mtlcolor 0 1 0 0.3 0.2 0.3 0.1 0.7 0.2 50
+sphere 0 0 14 2
+
+mtlcolor 0 1 1 0.3 0.5 0.7 0.2 0.6 0.2 50
+cone 0 6 14 0 -1 0 20 4
+
+mtlcolor 1 0 0 0.3 0.2 0.3 0.1 0.7 0.2 50
+sphere -5 0 14 1
+
+mtlcolor 1 0 1 0.3 0.2 0.3 0.1 0.7 0.2 50
+sphere 5 0 14 1
