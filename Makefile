@@ -7,8 +7,10 @@ SRCS = main.cc \
        src/vec.cc \
        src/color.cc \
        src/intersections.cc \
-       src/data.cc \
-       src/raytracer.cc
+       src/camera.cc \
+       src/scene.cc \
+       src/scene_loader.cc \
+       src/renderer.cc
 
 all: $(TARGET)
 

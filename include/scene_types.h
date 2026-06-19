@@ -5,9 +5,10 @@
 #include "vec.h"
 #include "color.h"
 #define M_PI 3.14159265358979323846
+
 struct Ray
 {
-    vec3 orig, direc; // r(t) = orig + t * direc
+    vec3 orig, direc;
 };
 
 struct Light
@@ -17,30 +18,48 @@ struct Light
     double intensity;
 };
 
+struct Material
+{
+    Color diffuse{1, 1, 1};
+    Color specular{1, 1, 1};
+    double ka = 1, kd = 1, ks = 1;
+    int shininess = 0;
+    int textureId = -1;
+    int bumpId = -1;
+    double alpha = 0;
+    double eta = 1;
+};
+
+struct HitRecord
+{
+    double t = 0;
+    vec3 hitPoint, N;
+    Color Od, Os;
+    double ka = 0, kd = 0, ks = 0;
+    int shininess = 0;
+    double alpha = 1;
+    double eta = 1;
+};
+
+struct Texture
+{
+    int width = 0, height = 0;
+    std::vector<Color> pixels;
+    bool valid() const { return width > 0 && height > 0 && !pixels.empty(); }
+};
+
 struct sphere
 {
     double cx, cy, cz;
     double radius;
-    Color diffuseLight;
-    Color specularLight;
-    std::vector<double> coefficients;
-    int shininess;
-    int textureId = -1;
-    double alpha = 0;
-    double eta = 1;
+    Material mat;
 };
 
 struct ellipsoid
 {
     double cx, cy, cz;
     double rx, ry, rz;
-    Color diffuseLight{1, 1, 1};
-    Color specularLight{1, 1, 1};
-    std::vector<double> coefficients{1, 1, 1};
-    int shininess = 0;
-    int textureId = -1;
-    double alpha = 0;
-    double eta = 1;
+    Material mat;
 };
 
 struct cone
@@ -49,13 +68,7 @@ struct cone
     double dx, dy, dz;
     double angle;
     double height;
-    Color diffuseLight{1, 1, 1};
-    Color specularLight{1, 1, 1};
-    std::vector<double> coefficients{1, 1, 1};
-    int shininess = 0;
-    int textureId = -1;
-    double alpha = 0;
-    double eta = 1;
+    Material mat;
 };
 
 struct cylinder
@@ -64,13 +77,7 @@ struct cylinder
     double dx, dy, dz;
     double radius;
     double length;
-    Color diffuseLight{1, 1, 1};
-    Color specularLight{1, 1, 1};
-    std::vector<double> coefficients{1, 1, 1};
-    int shininess = 0;
-    int textureId = -1;
-    double alpha = 0;
-    double eta = 1;
+    Material mat;
 };
 
 struct triangle
@@ -78,16 +85,7 @@ struct triangle
     vec3 v0, v1, v2;
     vec3 n0, n1, n2;
     vec2 t0, t1, t2;
-
-    Color diffuseLight;
-    Color specularLight;
-    std::vector<double> coefficients;
-    int shininess;
-
-    int textureId;
-    int bumpId;
-    double alpha = 0;
-    double eta = 1;
+    Material mat;
 };
 
 #endif

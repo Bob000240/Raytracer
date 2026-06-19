@@ -1,5 +1,6 @@
 #include <iostream>
-#include "raytracer.h"
+#include "scene_loader.h"
+#include "renderer.h"
 
 int main(int argc, char **argv)
 {
@@ -9,7 +10,11 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    RayTracer trace(argv[1]);
-    trace.renderShapes();
+    LoadResult result = SceneLoader::load(argv[1]);
+    if (!result.valid)
+        return 1;
+
+    Renderer renderer(result.camera, result.scene);
+    renderer.render(result.outputFile);
     return 0;
 }
