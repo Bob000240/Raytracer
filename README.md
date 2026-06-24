@@ -68,6 +68,8 @@ mtlcolor 0 1 0 0.3 0.2 0.3 0.1 0.7 0.2 50 1 1
 sphere 0 0 14 2
 ```
 
-## Performance
+## Demo
 
-Render time is printed to stderr on each run. On an 8-core machine a 1400×1000 scene renders in under 0.2s.
+![Demo render](demo.png)
+
+
