@@ -35,3 +35,9 @@ Ray Camera::generateRay(int i, int j) const
     vec3 p = upperLeft + delta_h * (double)i + delta_v * (double)j + delta_c_h + delta_c_v;
     return Ray{eyePos, (p - eyePos).unit()};
 }
+
+Ray Camera::generateRay(int i, int j, double ox, double oy) const
+{
+    vec3 p = upperLeft + delta_h * ((double)i + ox) + delta_v * ((double)j + oy) + delta_c_h + delta_c_v;
+    return Ray{eyePos, (p - eyePos).unit()};
+}

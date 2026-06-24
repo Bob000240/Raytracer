@@ -7,6 +7,9 @@
 #include <vector>
 #include <pthread.h>
 #include <unistd.h>
+#include <random>
+
+static const int AA_SAMPLES = 16;
 
 Renderer::Renderer(const Camera &camera, const Scene &scene)
     : cam(camera), scene(scene)
@@ -227,11 +230,19 @@ void *Renderer::worker(void *arg)
         if (idx >= work->totalBlocks)
             break;
 
+        thread_local std::mt19937 rng(std::random_device{}());
+        thread_local std::uniform_real_distribution<double> jitter(-0.5, 0.5);
+
         PixelsBlock &b = work->blocks[idx];
         for (int j = b.y0; j < b.y1; j++)
             for (int i = b.x0; i < b.x1; i++)
-                (*work->fb)[j * work->W + i] =
-                    work->renderer->recursiveTrace(work->renderer->cam.generateRay(i, j), 5);
+            {
+                Color accum(0, 0, 0);
+                for (int s = 0; s < AA_SAMPLES; s++)
+                    accum += work->renderer->recursiveTrace(
+                        work->renderer->cam.generateRay(i, j, jitter(rng), jitter(rng)), 5);
+                (*work->fb)[j * work->W + i] = accum * (1.0 / AA_SAMPLES);
+            }
     }
 
     return NULL;

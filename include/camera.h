@@ -11,6 +11,7 @@ public:
            int vfov, int imgW, int imgH);
 
     Ray generateRay(int i, int j) const;
+    Ray generateRay(int i, int j, double ox, double oy) const;
     int width() const { return imgW; }
     int height() const { return imgH; }
     vec3 getEye() const { return eyePos; }
