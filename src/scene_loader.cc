@@ -36,6 +36,9 @@ static bool loadTexturePPM(const std::string &filename, Texture &tex)
     tex.height = h;
     tex.pixels.resize(w * h);
 
+    if (maxv <= 0) { std::fclose(fp); return false; }
+    const double scale = 1.0 / maxv;
+
     for (int j = 0; j < h; ++j)
     {
         for (int i = 0; i < w; ++i)
@@ -48,9 +51,9 @@ static bool loadTexturePPM(const std::string &filename, Texture &tex)
             }
 
             Color c;
-            c.setR((double)r / maxv)
-             .setG((double)g / maxv)
-             .setB((double)b / maxv);
+            c.setR(r * scale)
+             .setG(g * scale)
+             .setB(b * scale);
 
             tex.pixels[j * w + i] = c;
         }
@@ -72,12 +75,12 @@ LoadResult SceneLoader::load(const std::string &filename)
     }
 
     vec3 eye, viewdir, updir;
-    int  vfov = 0, imgW = 0, imgH = 0;
+    int vfov = 0, imgW = 0, imgH = 0;
     bool hasEye = false, hasViewdir = false, hasUpdir = false;
     bool hasVfov = false, hasImsize = false;
 
     Material currentMat;
-    int      currentTextureId = -1;
+    int currentTextureId = -1;
 
     std::vector<vec3> vertPos;
     std::vector<vec3> vertNor;

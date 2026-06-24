@@ -7,7 +7,7 @@
 
 struct LoadResult
 {
-    Scene  scene;
+    Scene scene;
     Camera camera;
     std::string outputFile;
     bool valid = false;

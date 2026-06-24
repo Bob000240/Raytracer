@@ -10,6 +10,8 @@ class Renderer
 public:
     Renderer(const Camera &camera, const Scene &scene);
     void render(const std::string &outputFile);
+    Ray generateRay(int i, int j) const { return cam.generateRay(i, j); }
+    Color traceRay(const Ray &ray) const { return recursiveTrace(ray, 5); }
 
 private:
     const Camera &cam;
@@ -17,12 +19,12 @@ private:
 
     Color recursiveTrace(const Ray &ray, int depth) const;
 
-    vec3   reflection(const vec3 &I, const vec3 &N) const;
+    vec3 reflection(const vec3 &I, const vec3 &N) const;
     double fresnel(double ni, double nt, const vec3 &I, const vec3 &N) const;
-    vec3   refraction(const vec3 &I, const vec3 &N, double ni, double nt) const;
+    vec3 refraction(const vec3 &I, const vec3 &N, double ni, double nt) const;
 
     double shadowFactor(const vec3 &hitPoint, const Light &light, const vec3 &N) const;
-    Color  blinnPhong(const vec3 &hitPoint, const vec3 &N, const vec3 &V,
+    Color blinnPhong(const vec3 &hitPoint, const vec3 &N, const vec3 &V,
                       const Color &Od, const Color &Os,
                       double ka, double kd, double ks, int shininess) const;
 };

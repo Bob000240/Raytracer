@@ -104,7 +104,7 @@ void Scene::coneHit(const cone &s, const Ray &ray, double t, HitRecord &rec) con
     double cosT  = std::cos(theta);
     double cos2  = cosT * cosT;
 
-    vec3   q = rec.hitPoint - tip;
+    vec3 q = rec.hitPoint - tip;
     double m = q.dot(axis);
 
     rec.N = (axis * m - q * cos2).unit();
@@ -152,9 +152,9 @@ void Scene::cylinderHit(const cylinder &s, const Ray &ray, double t, HitRecord &
     vec3 base(s.cx, s.cy, s.cz);
     vec3 axis = vec3(s.dx, s.dy, s.dz).unit();
 
-    vec3   q    = rec.hitPoint - base;
+    vec3 q = rec.hitPoint - base;
     double proj = q.dot(axis);
-    vec3   radial = q - axis * proj;
+    vec3 radial = q - axis * proj;
 
     rec.N = radial.unit();
 

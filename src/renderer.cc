@@ -3,6 +3,10 @@
 #include <cstdio>
 #include <cmath>
 #include <iostream>
+#include <time.h>
+#include <vector>
+#include <pthread.h>
+#include <unistd.h>
 
 Renderer::Renderer(const Camera &camera, const Scene &scene)
     : cam(camera), scene(scene)
@@ -11,7 +15,7 @@ Renderer::Renderer(const Camera &camera, const Scene &scene)
 
 double Renderer::shadowFactor(const vec3 &hitPoint, const Light &light, const vec3 &N) const
 {
-    vec3   L;
+    vec3 L;
     double maxT;
     const double EPS = 1e-6;
 
@@ -119,7 +123,6 @@ Color Renderer::blinnPhong(
         if (light.w == 1)
         {
             vec3 toLight = vec3(light.x, light.y, light.z) - hitPoint;
-            double dist  = toLight.norm();
             L = toLight.unit();
         }
         else
@@ -137,7 +140,7 @@ Color Renderer::blinnPhong(
         {
             diffuse = Od * (kd * ndotl);
 
-            vec3   H     = (L + V).unit();
+            vec3 H = (L + V).unit();
             double ndoth = N.dot(H);
             if (ndoth < 0) ndoth = 0;
 
@@ -161,9 +164,9 @@ Color Renderer::recursiveTrace(const Ray &ray, int depth) const
         return scene.bkgcolor;
 
     bool entering = ray.direc.dot(rec.N) < 0;
-    vec3   normal = entering ? rec.N : -rec.N;
-    double ni     = entering ? scene.bgdIoRefraction : rec.eta;
-    double nt     = entering ? rec.eta : scene.bgdIoRefraction;
+    vec3 normal = entering ? rec.N : -rec.N;
+    double ni = entering ? scene.bgdIoRefraction : rec.eta;
+    double nt = entering ? rec.eta : scene.bgdIoRefraction;
 
     Color reflectColor(0, 0, 0);
     Color refractColor(0, 0, 0);
@@ -173,7 +176,7 @@ Color Renderer::recursiveTrace(const Ray &ray, int depth) const
     if (rec.ks > 0)
     {
         vec3 Rdir = reflection(I, normal).unit();
-        Ray  reflectRay{rec.hitPoint + normal * 1e-6, Rdir};
+        Ray reflectRay{rec.hitPoint + normal * 1e-6, Rdir};
         reflectColor = recursiveTrace(reflectRay, depth - 1);
     }
 
@@ -189,7 +192,7 @@ Color Renderer::recursiveTrace(const Ray &ray, int depth) const
         }
     }
 
-    vec3  V          = (-ray.direc).unit();
+    vec3 V = (-ray.direc).unit();
     Color localColor = blinnPhong(rec.hitPoint, normal, V,
                                   rec.Od, rec.Os,
                                   rec.ka, rec.kd, rec.ks, rec.shininess);
@@ -197,10 +200,80 @@ Color Renderer::recursiveTrace(const Ray &ray, int depth) const
     return (localColor + reflectColor * F + refractColor * (1 - F)).clamped();
 }
 
+struct PixelsBlock {
+    int x0, y0, x1, y1;
+};
+
+struct BlockWork {
+    const Renderer *renderer;
+    std::vector<Color> *fb;
+    int W, H;
+    int totalBlocks;
+    PixelsBlock *blocks;
+    int nextBlock;
+    pthread_mutex_t mutex;
+};
+
+static void *worker(void *arg)
+{
+    BlockWork *work = (BlockWork *)arg;
+
+    while (1)
+    {
+        pthread_mutex_lock(&work->mutex);
+        int idx = work->nextBlock++;
+        pthread_mutex_unlock(&work->mutex);
+
+        if (idx >= work->totalBlocks)
+            break;
+
+        PixelsBlock &b = work->blocks[idx];
+        for (int j = b.y0; j < b.y1; j++)
+            for (int i = b.x0; i < b.x1; i++)
+                (*work->fb)[j * work->W + i] =
+                    work->renderer->traceRay(work->renderer->generateRay(i, j));
+    }
+
+    return NULL;
+}
+
 void Renderer::render(const std::string &outputFile)
 {
     int W = cam.width();
     int H = cam.height();
+    std::vector<Color> fb(W * H);
+    const int len = 16;
+    std::vector<PixelsBlock> blocks;
+    for (int y = 0; y < H; y += len)
+        for (int x = 0; x < W; x += len)
+            blocks.push_back({x, y, std::min(x + len, W), std::min(y + len, H)});
+
+    BlockWork work;
+    work.renderer = this;
+    work.fb = &fb;
+    work.W = W;
+    work.H = H;
+    work.totalBlocks = (int)blocks.size();
+    work.blocks = blocks.data();
+    work.nextBlock = 0;
+    pthread_mutex_init(&work.mutex, NULL);
+
+    struct timespec t0, t1;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+
+    int nThreads = (int)sysconf(_SC_NPROCESSORS_ONLN);
+    std::vector<pthread_t> threads(nThreads);
+    for (int t = 0; t < nThreads; t++)
+        pthread_create(&threads[t], NULL, worker, &work);
+
+    for (int t = 0; t < nThreads; t++)
+        pthread_join(threads[t], NULL);
+
+    pthread_mutex_destroy(&work.mutex);
+
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+    double elapsed = (t1.tv_sec - t0.tv_sec) + (t1.tv_nsec - t0.tv_nsec) / 1e9;
+    std::fprintf(stderr, "Render time: %.3f s\n", elapsed);
 
     FILE *out = std::fopen(outputFile.c_str(), "w");
     if (!out)
@@ -208,19 +281,15 @@ void Renderer::render(const std::string &outputFile)
         std::cout << "Failed to open output file\n";
         return;
     }
-
     std::fprintf(out, "P3\n%d %d\n255\n", W, H);
-
-    for (int j = 0; j < H; ++j)
+    for (int j = 0; j < H; j++)
     {
-        for (int i = 0; i < W; ++i)
+        for (int i = 0; i < W; i++)
         {
-            Ray   ray        = cam.generateRay(i, j);
-            Color pixelColor = recursiveTrace(ray, 5);
-            std::fprintf(out, "%d %d %d ", pixelColor.Ri(), pixelColor.Gi(), pixelColor.Bi());
+            const Color &c = fb[j * W + i];
+            std::fprintf(out, "%d %d %d ", c.Ri(), c.Gi(), c.Bi());
         }
         std::fprintf(out, "\n");
     }
-
     std::fclose(out);
 }

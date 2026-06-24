@@ -13,7 +13,7 @@ public:
     std::vector<triangle> triangles;
     std::vector<Light>    lights;
     std::vector<Texture>  textures;
-    Color  bkgcolor{0, 0, 0};
+    Color bkgcolor{0, 0, 0};
     double bgdIoRefraction = 1.0;
 
     bool intersect(const Ray &ray, HitRecord &rec) const;

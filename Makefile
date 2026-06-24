@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++20 -Iinclude
+CXXFLAGS = -std=c++20 -Iinclude -pthread
 
 TARGET = raytracer
 
@@ -17,5 +17,8 @@ all: $(TARGET)
 $(TARGET): $(SRCS)
 	$(CXX) $(CXXFLAGS) $(SRCS) -o $(TARGET)
 
+lint:
+	clang-tidy $(SRCS) -- $(CXXFLAGS)
+
 clean:
-	del /Q $(TARGET).exe 2>NUL || rm -f $(TARGET)
+	rm -f $(TARGET)
